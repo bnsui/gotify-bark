@@ -1,0 +1,7 @@
+# 忽略不必要的文件和目录
+.git
+.gitignore
+Dockerfile
+README.md
+*.log
+*.swp
