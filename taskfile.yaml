@@ -20,7 +20,7 @@ tasks:
     cmds:
       - go mod download
       - go build -v -o gotify-bark ./cmd/gotify-bark
-      - ./gotify-bark
+      - cmd: ./gotify-bark
 
   cleanup:
     desc: Remove previous docker container
