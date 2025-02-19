@@ -20,7 +20,7 @@ tasks:
     cmds:
       - go mod download
       - go build -v -o gotify-bark ./cmd/gotify-bark
-      - cmd: ./gotify-bark
+      - ./gotify-bark
 
   cleanup:
     desc: Remove previous docker container
@@ -36,14 +36,14 @@ tasks:
       - docker run --env-file .env --name {{.NAME}} {{.TAG}}
 
   image:
-    desc: Build docker images
+    desc: Build docker images for multiple platforms
     cmds:
-      - docker buildx build -t {{.TAG}} --load .
+      - docker buildx build -t {{.TAG}} --platform {{.PLATFORM}} --load .
 
   push:
-    desc: Build and Push docker image.
+    desc: Build and Push docker image for multiple platforms.
     cmds:
-      - docker buildx build -t {{.TAG}} --push --platform {{.PLATFORM}} .
+      - docker buildx build -t {{.TAG}} --platform {{.PLATFORM}} --push .
 
   deploy:
     desc: Deploy the container image (keep-running).
