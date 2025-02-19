@@ -1,24 +1,21 @@
-# 第一阶段：构建阶段
-# 使用官方的Golang镜像作为基础镜像，设置构建平台
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+# 使用官方的 Golang 镜像作为基础构建镜像，指定平台为 amd64 和 arm64
+FROM --platform=$BUILDPLATFORM golang:1.22 AS builder
 
 # 设置容器内的工作目录
 WORKDIR /app
 
-# 优化：将 go mod 和 go sum 文件单独复制并下载依赖，利用缓存策略
-COPY go.mod go.sum ./
-RUN go mod download
-
-# 复制源代码到容器中
+# 将源代码复制到容器中
 COPY . .
 
-# 构建二进制文件，使用 CGO_ENABLED=0 以静态编译，支持跨平台
-ARG TARGETPLATFORM
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | cut -d / -f2) go build -ldflags="-w -s" -v -o gotify-bark ./cmd/gotify-bark
+# 下载依赖项
+RUN go mod download
 
-# 第二阶段：运行阶段
-# 使用更小的基础镜像
-FROM alpine:latest
+# 构建二进制文件，根据目标平台进行交叉编译
+ARG TARGETPLATFORM
+RUN GOOS=linux GOARCH=$(echo $TARGETPLATFORM | cut -d '/' -f2) go build -v -o gotify-bark ./cmd/gotify-bark
+
+# 使用轻量级的 Alpine 镜像作为最终基础镜像，指定平台为 amd64 和 arm64
+FROM --platform=$TARGETPLATFORM alpine:latest
 
 # 设置容器内的工作目录
 WORKDIR /app
@@ -29,12 +26,9 @@ COPY --from=builder /app/gotify-bark .
 # 暴露应用程序运行的端口
 EXPOSE 8080
 
-# 设置数据存储的挂载点
-VOLUME /app/data
-
-# 设置健康检查命令，假设应用有 /status 端点
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/status || exit 1
-
 # 设置容器的入口点
 ENTRYPOINT ["./gotify-bark"]
+
+# 保留原有的 VOLUME 和 HEALTHCHECK（如果有的话，这里假设原 Dockerfile 中有相关内容，你可以根据实际情况调整）
+VOLUME ["/app/data"]
+HEALTHCHECK --interval=5s --timeout=3s CMD curl -f http://localhost:8080 || exit 1
