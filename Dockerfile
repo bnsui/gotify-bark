@@ -1,5 +1,5 @@
 # 使用官方的 Golang 镜像作为基础构建镜像，指定平台为 amd64 和 arm64
-FROM --platform=$BUILDPLATFORM golang:1.22 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23 AS builder
 
 # 设置容器内的工作目录
 WORKDIR /app
