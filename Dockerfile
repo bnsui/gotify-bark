@@ -12,7 +12,7 @@ RUN go mod download
 
 # 构建二进制文件，根据目标平台进行交叉编译
 ARG TARGETPLATFORM
-RUN GOOS=linux GOARCH=$(echo $TARGETPLATFORM | cut -d '/' -f2) go build -v -o gotify-bark ./cmd/gotify-bark
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | cut -d '/' -f2) go build -v -o gotify-bark ./cmd/gotify-bark
 
 # 使用轻量级的 Alpine 镜像作为最终基础镜像，指定平台为 amd64 和 arm64
 FROM --platform=$TARGETPLATFORM alpine:latest
@@ -22,6 +22,8 @@ WORKDIR /app
 
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/gotify-bark .
+# 设置二进制文件执行权限（可选，为了确保）
+RUN chmod +x gotify-bark
 
 # 暴露应用程序运行的端口
 EXPOSE 8080
