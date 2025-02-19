@@ -1,7 +1,7 @@
 name: Build gotify-bark Docker Image
 
 on:
-  # 当有代码推送到 main 分支时触发构建
+  # 当有代码推送到 main 分支时触发构建，其他分支手动构建
   push:
     branches:
       - main
@@ -29,10 +29,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 构建 Docker 镜像，并打上合适的标签
-      - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }} .
+      # 获取当前分支名称
+      - name: Get branch name
+        id: get_branch
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF_NAME})" >> $GITHUB_ENV
 
-      # 推送 Docker 镜像到 GitHub Packages
-      - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}
+      # 构建 Docker 镜像，并以分支名称打标签，支持多架构
+      - name: Build Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${{ github.repository }}:${{ env.BRANCH_NAME }} \
+            --push \
+            .
